@@ -2,15 +2,14 @@
 
 By: Paul Jensen
 
-## Introduction
-
-The primary objective of this project is to design and implement an advanced Process Manager that not only empowers users to create, manage, and synchronize processes but also offers a comprehensive set of features to facilitate robust inter-process communication (IPC) and synchronization between threads. This Process Manager is designed to provide a unified and user-friendly interface for process creation, management, and synchronization, harnessing the capabilities of system calls for process and thread control. It stands as an embodiment of ingenuity in the domain of multi-processing, striving to enhance the performance and stability of diverse applications.
-
-**Objectives:**
+## Objectives
 
 To manipulate processes and threads.
+
 To explore inter-process communication mechanisms, through memory sharing and message passing.
+
 To process text files of varying sizes through use of parallelized operations
+
 To evaluate the performance of different aspects of multiprocess/multithread functionality
 
 ## System Requirements
@@ -480,10 +479,14 @@ Different sizes of files can be tested with the provided .txt's
 
 ## Discussion
 
-### Challenges
+### Challenges & Limitations
 
-### Structure
+The most demanding aspect of this task was ensuring the seamless operation of various components within the multi-process and thread manager. Python does not safely support thread termination, and attempting to incorporate this feature resulted in significant difficulties. Consequently, it was omitted from my final project submission. Testing the two IPC versions—for memory sharing and message passing—proved particularly challenging within the manager. To address this challenge, I created a separate Python file dedicated to testing these specific functions.
 
-### Limitations
+### Learning and Skills Development
+
+This project marked a profound educational experience in grasping and manipulating fundamental system operations. It offered hands-on practice with system calls for managing processes and threads, enhancing my comprehension of the intricacies associated with process synchronization and Inter-Process Communication (IPC). Crafting this Process Manager refined my expertise in parallel programming and managing system resources, vital competencies for any software engineer working with multi-threaded applications.
 
 ### Conclusion
+
+This project developed a multi-process and multi-thread manager, enhancing visibility into system resource utilization and enabling detailed monitoring and control over processes and threads. The implementation of various Inter-Process Communication (IPC) mechanisms, including shared memory and message passing, provided valuable insights into performance differences under various conditions. The parallel text file processing system demonstrated effective character conversion and frequency counting, showcasing the system's efficiency and scalability with large files.

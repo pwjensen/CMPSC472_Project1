@@ -1,37 +1,45 @@
-import logging
+# Import required modules
+import logging # Used for logging messages.
 import sys
-import threading
-from multiprocessing import Process, Event as ProcessEvent
-import time
-import queue
+import threading # For creating and managing threads.
+from multiprocessing import Process, Event as ProcessEvent # Process for creating separate processes, Event for synchronization.
+import time # For simulating work with sleep.
+import queue # For managing commands in a queue.
 
+# Set up basic configuration for logging system. Log messages include timestamp, severity level, and message.
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Defines a custom process with pause and resume capabilities.
 class CustomProcess:
+    # Initialize with a name and a pause_event for controlling the execution flow.
     def __init__(self, name):
         self.name = name
         self.pause_event = ProcessEvent()
-        self.pause_event.set()
+        self.pause_event.set() # Initially set to True to allow running.
 
     def run(self):
+        # Main loop of the process. Logs start message and enters an infinite loop that can be paused or resumed.
         logging.info(f"Process {self.name} started.")
         while True:
-            self.pause_event.wait()
-            time.sleep(1)  # Simulate work
+            self.pause_event.wait() # Blocks until pause_event is True.
+            time.sleep(1)  # Simulates work by sleeping.
 
 class CustomThread:
     def __init__(self, name):
         self.name = name
         self.pause_event = threading.Event()
-        self.pause_event.set()
+        self.pause_event.set() # Initially set to True to allow running.
 
     def run(self):
+        # Main loop of the thread. Logs start message and enters an infinite loop that can be paused or resumed.
         logging.info(f"Thread {self.name} started.")
         while True:
-            self.pause_event.wait()
-            time.sleep(1)  # Simulate work
+            self.pause_event.wait() # Blocks until pause_event is True.
+            time.sleep(1)  # Simulates work by sleeping.
 
+# Manages multiple processes, allowing creation, pausing, resuming, and termination.
 class ProcessManager:
+    # Initializes with empty dictionaries for tracking processes and their names to PIDs.
     def __init__(self):
         self.processes = {}
         self.names_to_pids = {}
@@ -81,6 +89,7 @@ class ProcessManager:
             status = "Paused" if not process_info['pause_event'].is_set() else "Running"
             logging.info(f"PID: {pid}, Name: {process_info['name']}, Status: {status}")
 
+# Manages multiple threads, allowing creation, pausing, and resuming.
 class ThreadManager:
     def __init__(self):
         self.threads = {}
@@ -119,14 +128,18 @@ class ThreadManager:
             status = "Paused" if not thread_info['pause_event'].is_set() else "Running"
             logging.info(f"TID: {tid}, Name: {thread_info['name']}, Status: {status}")
 
+# Provides a command-line interface for interacting with the ProcessManager and ThreadManager.
 class CLIManager(threading.Thread):
     def __init__(self, process_manager, thread_manager):
+        # Initializes with references to a process manager and a thread manager.
         super().__init__()
         self.process_manager = process_manager
         self.thread_manager = thread_manager
         self.commands = queue.Queue()
 
     def run(self):
+        # Main loop for processing commands. Exits on receiving the "exit" command.
+        # Commands are fetched from the queue and executed using the execute_command method.
         while True:
             command = self.commands.get()
             if command[0] == "exit":
@@ -136,6 +149,7 @@ class CLIManager(threading.Thread):
             time.sleep(0.5)  # Give time for logging messages to be processed
 
     def execute_command(self, command):
+        # Parses and executes commands to manage processes and threads. Supports operations like create, list, pause, resume, and terminate.
         if len(command) < 2:
             logging.error("Invalid command. Please include the operation and type.")
             return
@@ -170,6 +184,7 @@ class CLIManager(threading.Thread):
                 # No terminate operation for threads due to safety concerns
 
     def submit_command(self, command):
+        # Adds a command to the queue for processing.
         self.commands.put(command)
 
 if __name__ == "__main__":
