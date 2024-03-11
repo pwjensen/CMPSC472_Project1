@@ -30,7 +30,6 @@ def main(file_path):
     initial_cpu = process.cpu_percent(interval=None)
     initial_memory = process.memory_info().rss  # Resident Set Size: physical memory used
 
-    # Existing code for processing
     file_size = os.path.getsize(file_path)
     num_workers = 4  # Adjust based on your system's capabilities
     chunk_size = file_size // num_workers
@@ -60,6 +59,6 @@ def main(file_path):
     print(f"Memory usage increase: {memory_usage / (1024**2):.2f} MB")  # Convert bytes to MB
 
 # Testing different text sizes
-#main('BeeMovie.txt')
-#main('Frankenstein.txt')
-main('Dracula.txt')
+#main('TextFiles\BeeMovie.txt')
+#main('TextFiles\Frankenstein.txt')
+main('TextFiles\Dracula.txt')
