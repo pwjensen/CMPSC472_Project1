@@ -1,39 +1,228 @@
-# Threads
+# Project Report
 
-Initialization: The ManagedThread class takes an optional target function that it will execute repeatedly until stopped. It initializes control flags for stopping (\_stop_event) and pausing (\_pause_event).
+By: Paul Jensen
 
-Control Methods: The start, stop, pause, and resume methods control the thread's lifecycle. start initiates the thread, stop halts it permanently, pause temporarily suspends execution, and resume restarts execution after a pause.
+## Introduction
 
-Execution Flow Control: The internal method \_run_with_control checks the stop and pause events to manage the execution flow accordingly. When paused, the thread sleeps in a low-CPU-usage wait state until resume is called.
+The primary objective of this project is to design and implement an advanced Process Manager that not only empowers users to create, manage, and synchronize processes but also offers a comprehensive set of features to facilitate robust inter-process communication (IPC) and synchronization between threads. This Process Manager is designed to provide a unified and user-friendly interface for process creation, management, and synchronization, harnessing the capabilities of system calls for process and thread control. It stands as an embodiment of ingenuity in the domain of multi-processing, striving to enhance the performance and stability of diverse applications.
 
-Thread Safety and Management: The implementation uses threading events (Event) for thread-safe signaling between control methods and the thread's running loop.
+**Objectives:**
 
-This expanded Thread class offers a more controlled and manageable way of handling threads in Python, mimicking functionalities that are often required in more sophisticated threading scenarios, such as in operating systems or complex applications.
+To manipulate processes and threads.
+To explore inter-process communication mechanisms, through memory sharing and message passing.
+To process text files of varying sizes through use of parallelized operations
+To evaluate the performance of different aspects of multiprocess/multithread functionality
 
-# Process
+## System Requirements
 
-Process Management: The ManagedProcess class encapsulates a simulated process, using Python's multiprocessing.Process for actual process creation and management. Each ManagedProcess can have multiple ManagedThread instances, simulating threads within the process.
+- Python
 
-Starting and Stopping: The start method initiates the process and its threads. The stop method signals the process to terminate and stops all its threads.
+- psutil
 
-Thread Management: add_thread allows adding new threads to the process. If the process is already running, it starts the thread immediately.
+- numpy
 
-Simulating Process Work: The \_process_target method simulates process work and periodically checks if a stop event has been set, allowing for clean termination.
+## Installation and Usage
 
-Inter-Process and Thread Communication: While this example focuses on process and thread management, extending it to include IPC mechanisms would involve integrating shared memory or message queues for communication between processes and threads, as outlined in the IPC section.
+## Functionality of Different
 
-This expanded class provides a foundational framework for simulating process and thread management in a Python-based operating system simulation. Further enhancements could include more detailed process and thread metrics, improved error handling, and the integration of IPC mechanisms for comprehensive simulation.
+## Multi-Process and Thread Manager
 
-# Create Process
+### - Custom Process/Thread
 
-Dynamic Process and Thread Creation: This method dynamically creates a specified number of ManagedProcess instances, each with a set number of threads. Each thread is assigned a thread_target function, which represents the workload to be executed in parallel.
+```python
+class CustomProcess:
+    def __init__(self, name):
+        self.name = name
+        self.pause_event = ProcessEvent()
+        self.pause_event.set()
 
-Simulated Workload: The example_thread_target function simulates a simple workload for threads. In a real-world scenario, this could be any function, such as processing data, performing calculations, or handling I/O operations.
+    def run(self):
+        logging.info(f"Process {self.name} started.")
+        while True:
+            self.pause_event.wait()
+            time.sleep(1)  # Simulate work
 
-Control Flow: After starting all processes and their threads, the script waits for user input to proceed with stopping them. This pause allows us to observe the simulation running and demonstrates a simple way to manage process lifecycles dynamically.
+class CustomThread:
+    def __init__(self, name):
+        self.name = name
+        self.pause_event = threading.Event()
+        self.pause_event.set()
 
-Termination: Upon receiving input, the script cleanly stops all processes and their associated threads, showcasing graceful shutdown and resource cleanup.
+    def run(self):
+        logging.info(f"Thread {self.name} started.")
+        while True:
+            self.pause_event.wait()
+            time.sleep(1)  # Simulate work
+```
 
-This expanded method, combined with the previously defined ManagedProcess and ManagedThread classes, offers a foundational simulation of an operating system's process and thread management capabilities. It highlights the hierarchical structure of processes containing threads and the dynamic nature of starting and stopping these computing resources.
+### - Process/Thread Management
 
-# Create Thread
+`ProcessManager` Class:
+
+- Manages custom processes by creating, pausing, resuming, listing, and terminating them. It keeps track of processes and their IDs, along with a mapping from custom names to process IDs.
+
+`ThreadManager` Class:
+
+- Manages custom threads similarly to `ProcessManager`, including creating, pausing, resuming, and listing threads. It tracks threads and their thread IDs (TIDs), and maps names to TIDs.
+
+```python
+class ProcessManager:
+    def __init__(self):
+        self.processes = {}
+        self.names_to_pids = {}
+
+    def create_process(self, name):
+        if name in self.names_to_pids:
+            logging.error(f"A process with the name '{name}' already exists.")
+            return
+        process = CustomProcess(name)
+        p = Process(target=process.run)
+        p.start()
+        self.processes[p.pid] = {'process': p, 'pause_event': process.pause_event, 'name': name}
+        self.names_to_pids[name] = p.pid
+        logging.info(f"Process '{name}' with PID {p.pid} created.")
+
+    def pause_process(self, identifier):
+        pid = self.names_to_pids.get(identifier, identifier)
+        if pid in self.processes:
+            self.processes[pid]['pause_event'].clear()
+            logging.info(f"Process '{self.processes[pid]['name']}' with PID {pid} paused.")
+        else:
+            logging.error(f"Process with identifier '{identifier}' not found.")
+
+    def resume_process(self, identifier):
+        pid = self.names_to_pids.get(identifier, identifier)
+        if pid in self.processes:
+            self.processes[pid]['pause_event'].set()
+            logging.info(f"Process '{self.processes[pid]['name']}' with PID {pid} resumed.")
+        else:
+            logging.error(f"Process with identifier '{identifier}' not found.")
+
+    def terminate_process(self, identifier):
+        pid = self.names_to_pids.get(identifier, identifier)
+        if pid in self.processes:
+            name = self.processes[pid]['name']
+            self.processes[pid]['process'].terminate()
+            self.processes[pid]['process'].join()
+            del self.processes[pid]
+            del self.names_to_pids[name]
+            logging.info(f"Process '{name}' with PID {pid} terminated.")
+        else:
+            logging.error(f"Process with identifier '{identifier}' not found.")
+
+    def list_processes(self):
+        logging.info("List of running processes:")
+        for pid, process_info in self.processes.items():
+            status = "Paused" if not process_info['pause_event'].is_set() else "Running"
+            logging.info(f"PID: {pid}, Name: {process_info['name']}, Status: {status}")
+
+class ThreadManager:
+    def __init__(self):
+        self.threads = {}
+        self.names_to_tids = {}
+
+    def create_thread(self, name):
+        if name in self.names_to_tids:
+            logging.error(f"A thread with the name '{name}' already exists.")
+            return
+        thread = CustomThread(name)
+        t = threading.Thread(target=thread.run, name=name)
+        t.start()
+        self.threads[t.ident] = {'thread': t, 'pause_event': thread.pause_event, 'name': name}
+        self.names_to_tids[name] = t.ident
+        logging.info(f"Thread '{name}' with TID {t.ident} created.")
+
+    def pause_thread(self, identifier):
+        tid = self.names_to_tids.get(identifier, identifier)
+        if tid in self.threads:
+            self.threads[tid]['pause_event'].clear()
+            logging.info(f"Thread '{self.threads[tid]['name']}' with TID {tid} paused.")
+        else:
+            logging.error(f"Thread with identifier '{identifier}' not found.")
+
+    def resume_thread(self, identifier):
+        tid = self.names_to_tids.get(identifier, identifier)
+        if tid in self.threads:
+            self.threads[tid]['pause_event'].set()
+            logging.info(f"Thread '{self.threads[tid]['name']}' with TID {tid} resumed.")
+        else:
+            logging.error(f"Thread with identifier '{identifier}' not found.")
+
+    def list_threads(self):
+        logging.info("List of running threads:")
+        for tid, thread_info in self.threads.items():
+            status = "Paused" if not thread_info['pause_event'].is_set() else "Running"
+            logging.info(f"TID: {tid}, Name: {thread_info['name']}, Status: {status}")
+
+```
+
+### CLI Management
+
+`CLIManager` Class (Extends `threading.Thread`):
+
+- Provides a command-line interface to interact with the process and thread managers. It processes commands from a queue to create, list, pause, resume, or terminate processes and threads based on user input.
+
+- Inherits from `threading.Thread` to run the CLI in a separate thread, allowing it to listen for commands while the main thread continues execution.
+
+```python
+class CLIManager(threading.Thread):
+    def __init__(self, process_manager, thread_manager):
+        super().__init__()
+        self.process_manager = process_manager
+        self.thread_manager = thread_manager
+        self.commands = queue.Queue()
+
+    def run(self):
+        while True:
+            command = self.commands.get()
+            if command[0] == "exit":
+                logging.info("Exiting the Manager.")
+                break
+            self.execute_command(command)
+            time.sleep(0.5)  # Give time for logging messages to be processed
+
+    def execute_command(self, command):
+        if len(command) < 2:
+            logging.error("Invalid command. Please include the operation and type.")
+            return
+
+        operation, entity_type = command[0], command[1]
+
+        if operation == "create" and len(command) >= 3:
+            name = command[2]
+            if entity_type == 'process':
+                self.process_manager.create_process(name)
+            elif entity_type == 'thread':
+                self.thread_manager.create_thread(name)
+        elif operation == "list":
+            if entity_type == 'process':
+                self.process_manager.list_processes()
+            elif entity_type == 'thread':
+                self.thread_manager.list_threads()
+        elif len(command) >= 3:
+            identifier = command[2]
+            if entity_type == 'process':
+                if operation == "pause":
+                    self.process_manager.pause_process(identifier)
+                elif operation == "resume":
+                    self.process_manager.resume_process(identifier)
+                elif operation == "terminate":
+                    self.process_manager.terminate_process(identifier)
+            elif entity_type == 'thread':
+                if operation == "pause":
+                    self.thread_manager.pause_thread(identifier)
+                elif operation == "resume":
+                    self.thread_manager.resume_thread(identifier)
+                # No terminate operation for threads due to safety concerns
+
+    def submit_command(self, command):
+        self.commands.put(command)
+```
+
+### Overview
+
+This code effectively demonstrates advanced Python features like multiprocessing, multithreading, class inheritance, and event-driven programming to create a mini-framework for managing processes and threads through a simple CLI.
+
+## IPC
+
+## Parallel Text Processing
